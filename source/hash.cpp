@@ -15,7 +15,7 @@ constexpr Hash HASH_SEED = 0;
 
 struct {
    std::unordered_set<std::string> exts;
-   std::unordered_set<std::string> ignores;
+   std::vector<std::string> ignores;
 
    void Reset() {
       exts.clear();
@@ -27,8 +27,9 @@ struct {
          else exts.insert( i );
       }
 
-      for( auto &i : opt_ignores ) 
-         ignores.insert( i );
+      for( auto &i : opt_ignores ) {
+         ignores.push_back( i );
+      }
    }
 } Filter;
 
@@ -65,8 +66,9 @@ bool IsExcluded( const fs::path &path ) {
 
    // Ignore files that match the pattern specified.
    auto &ignores = Filter.ignores;
-   if( ignores.find( filename ) != ignores.end() ) {
-      return true;
+   for( auto &i : ignores ) {
+      if( filename == i ) return true;
+      if( path.generic_string() == i ) return true;
    }
 
    return false;
@@ -78,6 +80,9 @@ Hash AddFolder( fs::path path, bool recursive ) {
 
    for( auto &p : fs::directory_iterator( path )) {
       if( p.is_directory() && recursive ) {
+         auto path = p.path().lexically_relative( opt_basepath );
+         if( IsExcluded(path) ) continue;
+         
          hash ^= AddFolder( p, recursive );
       } else if( p.is_regular_file() ) {
          auto path = p.path().lexically_relative( opt_basepath );
@@ -139,7 +144,7 @@ Hash ProcessInputFile( std::string path ) {
                });
             } else if( match[1] == "ignores" || match[1] == "ignore" ) {
                SplitForeach( line.substr( 9 ), "|", []( std::string piece ) {
-                  Filter.ignores.insert( piece );
+                  Filter.ignores.push_back( piece );
                });
             }
          } else {
