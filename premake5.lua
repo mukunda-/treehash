@@ -28,4 +28,4 @@ project   "treehash"
 kind      "ConsoleApp"
 language  "C++"
 
-files { "treehash.cpp" }
+files { "source/treehash.cpp" }

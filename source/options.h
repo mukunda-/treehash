@@ -1,0 +1,18 @@
+// treehash (C) 2019 Mukunda Johnson
+///////////////////////////////////////////////////////////////////////////////
+#pragma once
+
+#include <string>
+#include <vector>
+
+///////////////////////////////////////////////////////////////////////////////
+namespace Treehash {
+
+void ReadOptions( int argc, char **argv );
+
+inline std::string opt_inputfile  = "";
+inline std::string opt_output     = "";
+inline std::vector<std::string> opt_inputs;
+inline std::vector<std::string> opt_excludes;
+
+} /////////////////////////////////////////////////////////////////////////////
