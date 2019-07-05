@@ -12,6 +12,8 @@ void ReadOptions( int argc, char **argv );
 
 inline std::string opt_basepath;
 inline std::vector<std::string> opt_inputs;
-inline std::vector<std::string> opt_excludes;
+
+inline std::vector<std::string> opt_exts;
+inline std::vector<std::string> opt_ignores;
 
 } /////////////////////////////////////////////////////////////////////////////

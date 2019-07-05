@@ -7,6 +7,7 @@
 #include <iostream>
 #include <algorithm>
 #include <sstream>
+#include <functional>
 ///////////////////////////////////////////////////////////////////////////////
 namespace Treehash {
 
@@ -43,6 +44,17 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+void SplitArg( std::string arg, std::function<void( std::string& )> func ) {
+   std::istringstream f( arg );
+   std::string split;
+   while( std::getline( f, split, '|' )) {
+      InplaceTrim( &split );
+      if( split.empty() ) continue;
+      func( split );
+   }
+}
+
+//-----------------------------------------------------------------------------
 void ReadOption( ArgIterator &args ) {
    if( args.End() ) return;
 
@@ -57,12 +69,14 @@ void ReadOption( ArgIterator &args ) {
       } else if( arg == "--help" || arg == "-h" ) {
          PrintUsage();
          std::exit( 0 );
-      } else if( arg == "--exclude" || arg == "-e" ) {
-         std::istringstream f( args.Get() );
-         std::string exclude;
-         while( std::getline( f, exclude, '|' )) {
-            opt_excludes.push_back( trim(exclude) );
-         }
+      } else if( arg == "--exts" || arg == "-e" ) {
+         SplitArg( args.Get(), []( std::string a ) {
+            opt_exts.push_back( a );
+         });
+      } else if( arg == "--ignore" || arg == "i" ) {
+         SplitArg( args.Get(), []( std::string a ) {
+            opt_ignores.push_back( a );
+         });
       } else {
          std::cout << "Unknown arg: " << arg << "\n";
          std::exit( 1 );

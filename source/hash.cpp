@@ -13,10 +13,25 @@ namespace Treehash {
 
 constexpr Hash HASH_SEED = 0;
 
-std::unordered_set<std::string> g_excluded_extensions;
-std::unordered_set<std::string> g_excluded_files;
+struct {
+   std::unordered_set<std::string> exts;
+   std::unordered_set<std::string> ignores;
 
-std::string HashHex( Hash hash ) {
+   void Reset() {
+      exts.clear();
+      ignores.clear();
+
+      for( auto &i : opt_exts )
+         exts.insert( i );
+
+      for( auto &i : opt_ignores ) 
+         ignores.insert( i );
+   }
+} Filter;
+
+
+//-----------------------------------------------------------------------------
+std::string HashToHex( Hash hash ) {
    std::string output;
    output.reserve( 16 );
    const char digit_map[] = {
@@ -40,7 +55,8 @@ bool IsExcluded( const fs::path &path ) {
    }
 
    // Ignore files that have an excluded extension.
-   if( g_excluded_extensions.find( path.extension().string() ) != g_excluded_extensions.end() ) {
+   auto &exts = g_included_extensions;
+   if( !exts.empty() && exts.find( path.extension().string() ) == exts.end() ) {
       return true;
    }
 
@@ -53,16 +69,18 @@ bool IsExcluded( const fs::path &path ) {
 }
 
 //-----------------------------------------------------------------------------
-Hash AddFolder( Hash hash, fs::path path, bool recursive ) {
+Hash AddFolder( fs::path path, bool recursive ) {
+   Hash hash = 0;
+
    for( auto &p : fs::directory_iterator( path )) {
       if( p.is_directory() && recursive ) {
-         hash ^= AddFolder( hash, p, recursive );
+         hash ^= AddFolder( p, recursive );
       } else if( p.is_regular_file() ) {
          auto path = p.path().lexically_relative( opt_basepath );
          if( IsExcluded( path )) continue;
 
          std::string file = path.generic_string();
-         hash ^= XXH64( file.data(), file.size(), 0 );
+         hash ^= XXH64( file.data(), file.size(), HASH_SEED );
          std::cout << file << "\n";
       }
    }
@@ -92,34 +110,45 @@ void ResetExcludes() {
 }
 
 //-----------------------------------------------------------------------------
+Hash ProcessFolder( std::string path ) {
+   path = trim( path );
+   if( path.empty() ) return 0;
+
+   bool recursive = false;
+
+   if( path[path.size()-1] == '*' ) {
+      recursive = true;
+      path.pop_back();
+   }
+
+   return AddFolder( path, true );
+}
+
+//-----------------------------------------------------------------------------
 Hash ProcessInputFile( std::string path ) {
    std::ifstream file( path );
    std::string line;
 
    Hash hash = HASH_SEED;
 
-   ResetExcludes();
-
    enum {
       FOLDERS, EXCLUDES
    } input_mode;
 
    while( std::getline( file, line )) {
+      InplaceTrim( &line );
+      if( line.empty() || line[0] == '#' ) continue;
+
       if( line == "[files]" ) {
          input_mode = FOLDERS;
          continue;
+      } else if( line == "[excludes]" ) {
+         input_mode = EXCLUDES;
+         continue;
       }
 
-      line = trim(line);
-      if( line.empty() ) continue;
-
       if( input_mode == FOLDERS ) {
-         bool recursive = false;
-         if( line[line.size()-1] == '*' ) {
-            recursive = true;
-            line.pop_back();
-         }
-         hash ^= AddFolder( hash, line, recursive );
+         hash ^= ProcessFolder( line );
       } else if( input_mode == EXCLUDES ) {
          AddExclude( line );
       }
@@ -130,6 +159,7 @@ Hash ProcessInputFile( std::string path ) {
 
 //-----------------------------------------------------------------------------
 Hash HashInput( std::string input ) {
+   Filter.Reset();
 
    if( fs::is_regular_file( input )) {
       // Input file
@@ -137,7 +167,8 @@ Hash HashInput( std::string input ) {
    } else if( fs::is_directory( input )) {
       // Directory
       ResetExcludes();
-      return AddFolder( 0, input, true );
+      return ProcessFolder( input );
+      
    }
    
    std::cout << "Bad input.\n";

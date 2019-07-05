@@ -22,8 +22,12 @@ int Run( int argc, char **argv ) {
       return 1;
    }
    
-   Hash hash = HashInput( opt_inputs[1] );
-   std::cout << HashHex( hash );
+   Hash hash = 0;
+   for( auto &input : opt_inputs )
+      hash ^= HashInput( input );
+      std::cout << hash;
+   
+   std::cout << HashToHex( hash );
    return 0;
 }
 
