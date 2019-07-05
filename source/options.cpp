@@ -1,4 +1,4 @@
-// treehash (C) 2019 Mukunda Johnson
+// treehash (C) 2019 Mukunda Johnson (mukunda@mukunda.com)
 ///////////////////////////////////////////////////////////////////////////////
 #include "options.h"
 #include "usage.h"
@@ -41,11 +41,6 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-void SetOutput( std::string output ) {
-   opt_output = output;
-}
-
-//-----------------------------------------------------------------------------
 void ReadOption( ArgIterator &args ) {
    if( args.End() ) return;
 
@@ -53,14 +48,16 @@ void ReadOption( ArgIterator &args ) {
    if( arg.empty() ) ReadOption( args );
    
    if( arg[0] == '-' ) {
-      if( arg == "--in"  || arg == "-i" ) opt_inputfile = args.Get();
-      if( arg == "--out" || arg == "-o" ) opt_output = args.Get();
-      if( arg == "--help" || arg == "-h" ) {
+      //if( arg == "--in"  || arg == "-i" ) opt_inputfile = args.Get();
+      //if( arg == "--out" || arg == "-o" ) opt_output = args.Get();
+      if( arg == "--base" || arg == "-b" ) {
+         opt_basepath = args.Get();
+      } else if( arg == "--help" || arg == "-h" ) {
          PrintUsage();
          std::exit( 0 );
       }
    } else {
-      // Input file
+      // Input.
       opt_inputs.emplace_back( arg );
    }
 

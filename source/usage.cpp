@@ -1,4 +1,4 @@
-// treehash (C) 2019 Mukunda Johnson
+// treehash (C) 2019 Mukunda Johnson (mukunda@mukunda.com)
 ///////////////////////////////////////////////////////////////////////////////
 #include "version.h"
 
