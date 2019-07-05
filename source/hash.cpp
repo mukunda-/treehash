@@ -17,20 +17,27 @@ struct {
    std::unordered_set<std::string> exts;
    std::vector<std::string> ignores;
 
-   void Reset() {
+   void ResetExts() {
       exts.clear();
-      ignores.clear();
-
       for( auto &i : opt_exts ) {
          // _ = no extension.
          if( i == "_" ) exts.insert( "" );
          else exts.insert( i );
       }
+   }
 
+   void ResetIgnores() {
+      ignores.clear();
       for( auto &i : opt_ignores ) {
          ignores.push_back( i );
       }
    }
+
+   void Reset() {
+      ResetExts();
+      ResetIgnores();
+   }
+
 } Filter;
 
 
@@ -138,11 +145,13 @@ Hash ProcessInputFile( std::string path ) {
          std::regex_search( line, match, re_inputfile_directive );
          if( !match.empty() ) {
             if( match[1] == "ext" || match[1] == "exts" || match[1] == "extensions" ) {
+               Filter.ResetExts();
                SplitForeach( line.substr( 6 ), " |", []( std::string piece ) {
                   if( piece == "_" ) piece = "";
                   Filter.exts.insert( piece );
                });
             } else if( match[1] == "ignores" || match[1] == "ignore" ) {
+               Filter.ResetIgnores();
                SplitForeach( line.substr( 9 ), "|", []( std::string piece ) {
                   Filter.ignores.push_back( piece );
                });
