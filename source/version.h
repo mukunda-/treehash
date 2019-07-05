@@ -1,5 +1,5 @@
 #pragma once
 
 namespace Treehash {
-   const std::string VERSION {"1.0.0"};
+   const std::string VERSION {"0.9.0"};
 }
