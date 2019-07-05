@@ -2,9 +2,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "options.h"
 #include "usage.h"
+#include "util.h"
 
 #include <iostream>
 #include <algorithm>
+#include <sstream>
 ///////////////////////////////////////////////////////////////////////////////
 namespace Treehash {
 
@@ -55,8 +57,15 @@ void ReadOption( ArgIterator &args ) {
       } else if( arg == "--help" || arg == "-h" ) {
          PrintUsage();
          std::exit( 0 );
+      } else if( arg == "exclude" || arg == "-e" ) {
+         std::istringstream f( args.Get() );
+         std::string exclude;
+         while( std::getline( f, exclude, "|" )) {
+            opt_excludes.push_back( trim(exclude) );
+         }
       }
    } else {
+      last_option.clear();
       // Input.
       opt_inputs.emplace_back( arg );
    }

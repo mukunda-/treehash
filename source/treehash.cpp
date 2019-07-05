@@ -21,8 +21,9 @@ int Run( int argc, char **argv ) {
                 << "Use --help for usage info.";
       return -1;
    }
- 
-   Hash( opt_inputs[1] );
+   
+   Hash hash = HashInput( opt_inputs[1] );
+   std::cout << HashHex( hash );
    return 0;
 }
 
