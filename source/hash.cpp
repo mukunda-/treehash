@@ -33,18 +33,20 @@ std::string HashHex( Hash hash ) {
 //-----------------------------------------------------------------------------
 bool IsExcluded( const fs::path &path ) {
    // Ignore files that start with "."
-   if( path.filename[0] == "." ) {
+   std::string filename = path.filename().string();
+
+   if( filename[0] == '.' ) {
       return true;
    }
 
    // Ignore files that have an excluded extension.
-   if( g_excluded_extensions.find( path.extension ) != g_excluded_extensions.end() ) {
+   if( g_excluded_extensions.find( path.extension().string() ) != g_excluded_extensions.end() ) {
       return true;
    }
 
    // Ignore files that match the pattern specified.
-   if( g_excluded_files.find( path ) != g_excluded_files.end() ) {
-      return true
+   if( g_excluded_files.find( filename ) != g_excluded_files.end() ) {
+      return true;
    }
 
    return false;
@@ -74,9 +76,9 @@ void AddExclude( std::string pattern ) {
 
    if( pattern[0] == '.' ) {
       g_excluded_extensions.insert( pattern );
+   } else {
+      g_excluded_files.insert( pattern );
    }
-
-   g_excluded_files.insert( pattern );
 }
 
 //-----------------------------------------------------------------------------
@@ -108,19 +110,18 @@ Hash ProcessInputFile( std::string path ) {
          continue;
       }
 
-      if( input_mode == FILES ) {
-         line = trim(line);
-         if( line.empty() ) continue;
+      line = trim(line);
+      if( line.empty() ) continue;
 
+      if( input_mode == FOLDERS ) {
          bool recursive = false;
          if( line[line.size()-1] == '*' ) {
             recursive = true;
             line.pop_back();
          }
-      
          hash ^= AddFolder( hash, line, recursive );
       } else if( input_mode == EXCLUDES ) {
-
+         AddExclude( line );
       }
    }
 
@@ -135,11 +136,12 @@ Hash HashInput( std::string input ) {
       return ProcessInputFile( input );
    } else if( fs::is_directory( input )) {
       // Directory
+      ResetExcludes();
       return AddFolder( 0, input, true );
    }
    
    std::cout << "Bad input.\n";
-   std::exit( -1 );
+   std::exit( 1 );
 }
 
 }

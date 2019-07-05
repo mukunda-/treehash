@@ -57,15 +57,17 @@ void ReadOption( ArgIterator &args ) {
       } else if( arg == "--help" || arg == "-h" ) {
          PrintUsage();
          std::exit( 0 );
-      } else if( arg == "exclude" || arg == "-e" ) {
+      } else if( arg == "--exclude" || arg == "-e" ) {
          std::istringstream f( args.Get() );
          std::string exclude;
-         while( std::getline( f, exclude, "|" )) {
+         while( std::getline( f, exclude, '|' )) {
             opt_excludes.push_back( trim(exclude) );
          }
+      } else {
+         std::cout << "Unknown arg: " << arg << "\n";
+         std::exit( 1 );
       }
    } else {
-      last_option.clear();
       // Input.
       opt_inputs.emplace_back( arg );
    }
@@ -80,7 +82,7 @@ void ReadOptions( int argc, char *argv[] ) {
       ReadOption( args );
    } catch( NoMoreArgs& ) {
       std::cout << "Missing expected argument after " << args.GetLast();
-      std::exit( -1 );
+      std::exit( 1 );
    }
 }
 

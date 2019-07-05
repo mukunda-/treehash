@@ -19,7 +19,7 @@ int Run( int argc, char **argv ) {
    if( opt_inputs.empty() ) {
       std::cout << "No input files.\n"
                 << "Use --help for usage info.";
-      return -1;
+      return 1;
    }
    
    Hash hash = HashInput( opt_inputs[1] );
