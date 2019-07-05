@@ -21,8 +21,11 @@ struct {
       exts.clear();
       ignores.clear();
 
-      for( auto &i : opt_exts )
-         exts.insert( i );
+      for( auto &i : opt_exts ) {
+         // _ = no extension.
+         if( i == "_" ) exts.insert( "" );
+         else exts.insert( i );
+      }
 
       for( auto &i : opt_ignores ) 
          ignores.insert( i );
@@ -55,13 +58,14 @@ bool IsExcluded( const fs::path &path ) {
    }
 
    // Ignore files that have an excluded extension.
-   auto &exts = g_included_extensions;
+   auto &exts = Filter.exts;
    if( !exts.empty() && exts.find( path.extension().string() ) == exts.end() ) {
       return true;
    }
 
    // Ignore files that match the pattern specified.
-   if( g_excluded_files.find( filename ) != g_excluded_files.end() ) {
+   auto &ignores = Filter.ignores;
+   if( ignores.find( filename ) != ignores.end() ) {
       return true;
    }
 
@@ -77,36 +81,23 @@ Hash AddFolder( fs::path path, bool recursive ) {
          hash ^= AddFolder( p, recursive );
       } else if( p.is_regular_file() ) {
          auto path = p.path().lexically_relative( opt_basepath );
-         if( IsExcluded( path )) continue;
+         if( IsExcluded( path )) {
+            if( opt_verbose ) {
+               std::string file = path.generic_string();
+               std::cout << "   " << file << "\n";
+            }
+            continue;
+         }
 
          std::string file = path.generic_string();
          hash ^= XXH64( file.data(), file.size(), HASH_SEED );
-         std::cout << file << "\n";
+
+         if( opt_verbose ) {
+            std::cout << " * " << file << "\n";
+         }
       }
    }
    return hash;
-}
-
-
-//-----------------------------------------------------------------------------
-void AddExclude( std::string pattern ) {
-   if( pattern.empty() ) return;
-
-   if( pattern[0] == '.' ) {
-      g_excluded_extensions.insert( pattern );
-   } else {
-      g_excluded_files.insert( pattern );
-   }
-}
-
-//-----------------------------------------------------------------------------
-void ResetExcludes() {
-   g_excluded_extensions.clear();
-   g_excluded_files.clear();
-
-   for( auto &exclude : opt_excludes ) {
-      AddExclude( exclude );
-   }
 }
 
 //-----------------------------------------------------------------------------
@@ -121,8 +112,10 @@ Hash ProcessFolder( std::string path ) {
       path.pop_back();
    }
 
-   return AddFolder( path, true );
+   return AddFolder( opt_basepath + "/" + path, true );
 }
+
+std::regex re_inputfile_directive( R"(^\[([^]*)\])" );
 
 //-----------------------------------------------------------------------------
 Hash ProcessInputFile( std::string path ) {
@@ -131,30 +124,35 @@ Hash ProcessInputFile( std::string path ) {
 
    Hash hash = HASH_SEED;
 
-   enum {
-      FOLDERS, EXCLUDES
-   } input_mode;
-
    while( std::getline( file, line )) {
       InplaceTrim( &line );
       if( line.empty() || line[0] == '#' ) continue;
 
-      if( line == "[files]" ) {
-         input_mode = FOLDERS;
-         continue;
-      } else if( line == "[excludes]" ) {
-         input_mode = EXCLUDES;
-         continue;
-      }
-
-      if( input_mode == FOLDERS ) {
+      if( line[0] == '[' ) {
+         std::smatch match;
+         std::regex_search( line, match, re_inputfile_directive );
+         if( !match.empty() ) {
+            if( match[1] == "ext" || match[1] == "exts" || match[1] == "extensions" ) {
+               SplitForeach( line.substr( 6 ), " |", []( std::string piece ) {
+                  if( piece == "_" ) piece = "";
+                  Filter.exts.insert( piece );
+               });
+            } else if( match[1] == "ignores" || match[1] == "ignore" ) {
+               SplitForeach( line.substr( 9 ), "|", []( std::string piece ) {
+                  Filter.ignores.insert( piece );
+               });
+            }
+         } else {
+            if( opt_verbose ) {
+               std::cout << "Unknown directive in input file: " << line << "\n";
+            }
+         }
+      } else {
          hash ^= ProcessFolder( line );
-      } else if( input_mode == EXCLUDES ) {
-         AddExclude( line );
       }
    }
 
-   return 0;
+   return hash;
 }
 
 //-----------------------------------------------------------------------------
@@ -162,16 +160,19 @@ Hash HashInput( std::string input ) {
    Filter.Reset();
 
    if( fs::is_regular_file( input )) {
+      
+      if( opt_verbose )
+         std::cout << "Input is an input file (or we think it is).\n";
       // Input file
       return ProcessInputFile( input );
    } else if( fs::is_directory( input )) {
+      if( opt_verbose )
+         std::cout << "Input is a directory. Scanning directly!\n";
       // Directory
-      ResetExcludes();
       return ProcessFolder( input );
-      
    }
    
-   std::cout << "Bad input.\n";
+   std::cout << "Invalid input.\n";
    std::exit( 1 );
 }
 

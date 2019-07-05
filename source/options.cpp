@@ -6,8 +6,6 @@
 
 #include <iostream>
 #include <algorithm>
-#include <sstream>
-#include <functional>
 ///////////////////////////////////////////////////////////////////////////////
 namespace Treehash {
 
@@ -20,7 +18,7 @@ struct NoMoreArgs : public std::runtime_error {
 class ArgIterator {
    int    m_argc;
    char **m_argv;
-   int    m_index = 0;
+   int    m_index = 1; // Skip program name.
 public:
    //--------------------------------------------------------------------------
    ArgIterator( int argc, char *argv[] )
@@ -44,17 +42,6 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-void SplitArg( std::string arg, std::function<void( std::string& )> func ) {
-   std::istringstream f( arg );
-   std::string split;
-   while( std::getline( f, split, '|' )) {
-      InplaceTrim( &split );
-      if( split.empty() ) continue;
-      func( split );
-   }
-}
-
-//-----------------------------------------------------------------------------
 void ReadOption( ArgIterator &args ) {
    if( args.End() ) return;
 
@@ -70,13 +57,17 @@ void ReadOption( ArgIterator &args ) {
          PrintUsage();
          std::exit( 0 );
       } else if( arg == "--exts" || arg == "-e" ) {
-         SplitArg( args.Get(), []( std::string a ) {
+         SplitForeach( args.Get(), "|", []( std::string &a ) {
             opt_exts.push_back( a );
          });
-      } else if( arg == "--ignore" || arg == "i" ) {
-         SplitArg( args.Get(), []( std::string a ) {
+      } else if( arg == "--ignore" || arg == "-i" ) {
+         SplitForeach( args.Get(), "|", []( std::string &a ) {
             opt_ignores.push_back( a );
          });
+      } else if( arg == "--verbose" || arg == "-v" ) {
+         opt_verbose = true;
+      } else if( arg == "--symlinks" || arg == "m" ) {
+         opt_symlinks = true;
       } else {
          std::cout << "Unknown arg: " << arg << "\n";
          std::exit( 1 );

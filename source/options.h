@@ -10,6 +10,8 @@ namespace Treehash {
 
 void ReadOptions( int argc, char **argv );
 
+inline bool opt_verbose  = false;
+inline bool opt_symlinks = false;
 inline std::string opt_basepath;
 inline std::vector<std::string> opt_inputs;
 
