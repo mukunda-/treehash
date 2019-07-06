@@ -42,17 +42,31 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+std::string AbsolutePath( std::string input ) {
+   try {
+      auto path = std::filesystem::path( input, std::filesystem::path::generic_format );
+      return std::filesystem::absolute( path ).generic_string();
+   } catch( std::filesystem::filesystem_error & ) {
+      return "";
+   }
+}
+
+//-----------------------------------------------------------------------------
 void ReadOption( ArgIterator &args ) {
    if( args.End() ) return;
 
    std::string arg = args.Get();
    if( arg.empty() ) ReadOption( args );
-   
+
    if( arg[0] == '-' ) {
       //if( arg == "--in"  || arg == "-i" ) opt_inputfile = args.Get();
       //if( arg == "--out" || arg == "-o" ) opt_output = args.Get();
       if( arg == "--base" || arg == "-b" ) {
-         opt_basepath = args.Get();
+         opt_basepath = AbsolutePath( args.Get() );
+         if( opt_basepath.empty() ) {
+            std::cout << "Invalid base path.\n";
+            std::exit( 1 );
+         }
       } else if( arg == "--help" || arg == "-h" ) {
          PrintUsage();
          std::exit( 0 );
@@ -77,10 +91,16 @@ void ReadOption( ArgIterator &args ) {
       }
    } else {
       // Input.
-      opt_inputs.emplace_back( arg );
+      std::string path = AbsolutePath( arg );
+      if( path.empty() ) {
+         std::cout << "Invalid input: " << arg << "\n";
+         std::exit( 1 );
+      }
+      opt_inputs.emplace_back( path );
    }
 
    ReadOption( args );
+   
 }
 
 //-----------------------------------------------------------------------------

@@ -84,59 +84,52 @@ bool IsExcluded( const fs::path &path, bool directory ) {
 }
 
 //-----------------------------------------------------------------------------
-Hash AddFolder( fs::path path, bool recursive ) {
+Hash AddFolder( const fs::path &path, bool recursive ) {
+   
    Hash hash = 0;
 
-   try {
-      if( !fs::exists( path )) {
-         //if( opt_ignore_missing ) return hash;
-         return hash;
-      }
+   std::error_code error_code;
+   auto dir_iter = fs::directory_iterator( path
+                        , fs::directory_options::follow_directory_symlink
+                        | fs::directory_options::skip_permission_denied
+                        , error_code );
 
-      for( auto &p : fs::directory_iterator( path )) {
-         if( p.is_directory() && recursive ) {
-            auto path = p.path().lexically_relative( opt_basepath );
-            if( IsExcluded( path, true )) continue;
-         
-            hash ^= AddFolder( p, recursive );
-         } else if( p.is_regular_file() ) {
-            auto path = p.path().lexically_relative( opt_basepath );
-            if( IsExcluded( path, false )) {
-               if( opt_verbose ) {
-                  std::string file = path.generic_string();
-                  std::cout << "   " << file << "\n";
-               }
-               continue;
-            }
-
-            std::string file = path.generic_string();
-            hash ^= XXH64( file.data(), file.size(), HASH_SEED );
-
-            if( opt_verbose ) {
-               std::cout << " * " << file << "\n";
-            }
-         }
-      }
-      return hash;
-   } catch( fs::filesystem_error &error ) {
-      std::cout << "Encountered error: " << error.what()
-                << " (" << error.code() << ")\n"; 
+   if( error_code ) {
       return 0;
    }
+
+   for( auto &p : dir_iter ) {
+      if( p.is_directory() && recursive ) {
+         auto &path = p.path();
+         if( IsExcluded( path, true )) continue;
+         hash ^= AddFolder( p, recursive );
+      } else if( p.is_regular_file() ) {
+         auto path = p.path();
+         if( IsExcluded( path, false )) {
+            if( opt_verbose ) {
+               std::string file = path.generic_string();
+               std::cout << "   " << file << "\n";
+            }
+            continue;
+         }
+
+         auto &file = path.generic_string();
+         hash ^= XXH64( file.data(), file.size(), HASH_SEED );
+
+         if( opt_verbose ) {
+            std::cout << " * " << file << "\n";
+         }
+      }
+   }
+   return hash;
 }
 
 //-----------------------------------------------------------------------------
-Hash ProcessInputFolder( std::string path ) {
-   InplaceTrim( &path );
-   if( path.empty() ) return 0;
-
-   bool recursive = false;
-   if( path[path.size()-1] == '*' ) {
-      recursive = true;
-      path.pop_back();
-   }
-
-   return AddFolder( path, recursive );
+bool StripRecurseMark( std::string *path ) {
+   if( path->empty() ) return false;
+   bool recursive = (*path)[path->size()-1] == '*';
+   if( recursive ) path->pop_back();
+   return recursive;
 }
 
 std::regex re_inputfile_directive( R"(^\[([^]*)\])" );
@@ -174,7 +167,8 @@ Hash ProcessInputFile( std::string path ) {
             }
          }
       } else {
-         hash ^= ProcessInputFolder( opt_basepath + "/" + line );
+         bool recursive = StripRecurseMark( &line );
+         hash ^= AddFolder( line, recursive );
       }
    }
 
@@ -183,30 +177,35 @@ Hash ProcessInputFile( std::string path ) {
 
 //-----------------------------------------------------------------------------
 Hash HashInput( std::string input ) {
+   std::error_code ec;
+   fs::current_path( opt_basepath, ec );
+   if( ec ) {
+      std::cout << "Error with basepath.\n";
+      std::exit( 1 );
+   }
+
    Filter.Reset();
    InplaceTrim( &input );
    if( input.empty() ) return 0;
-   std::string without_mods = input;
-   bool recursive = input[input.size()-1] == '*';
-   if( recursive ) {
-      without_mods.pop_back();
-   }
+
+   bool recurse = StripRecurseMark( &input );
+   auto path = fs::relative( input );
 
    try {
-      if( !fs::exists( without_mods )) {
+      if( !fs::exists( path )) {
          return 0;
       }
 
-      if( !recursive && fs::is_regular_file( without_mods )) {
+      if( !recurse && fs::is_regular_file( path )) {
          if( opt_verbose )
             std::cout << "Input is an input file (or we think it is).\n";
          // Input file
          return ProcessInputFile( input );
-      } else if( fs::is_directory( without_mods )) {
+      } else if( fs::is_directory( path )) {
          if( opt_verbose )
             std::cout << "Input is a directory. Scanning directly!\n";
          // Directory
-         return ProcessInputFolder( input );
+         return AddFolder( path, recurse );
       }
    } catch( fs::filesystem_error &e ) {
       std::cout << "Filesystem error: " << e.what()
