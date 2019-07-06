@@ -56,14 +56,14 @@ int Run( int argc, char **argv ) {
    // In non verbose mode, this should be the only output under normal
    //  circumstances:
    std::cout << HashToHex( hash );
-   if( opt_verbose ) std::cout << "\n";
+   if( opt_print_time ) std::cout << "\n";
 
    auto end_time = std::chrono::steady_clock::now();
-   if( opt_verbose ) {
+   if( opt_print_time ) {
       auto time = std::chrono::duration_cast<std::chrono::milliseconds>
                   ( end_time - start_time ).count();
       
-      std::cout << "Runtime: " << time << "ms\n";
+      std::cout << "Time elapsed: " << time << "ms\n";
    }
    return 0;
 }

@@ -47,6 +47,8 @@ OPTIONS:
                  out, to allow you to diagnose what is going on when the trees
                  are hashed.
 
+ -t --time       Measure time elapsed for all hashes and print that.
+
  -m --symlinks   Using this options causes any symlinks to be followed, which
                  are otherwise ignored.
        

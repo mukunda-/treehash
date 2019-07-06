@@ -66,8 +66,11 @@ void ReadOption( ArgIterator &args ) {
          });
       } else if( arg == "--verbose" || arg == "-v" ) {
          opt_verbose = true;
-      } else if( arg == "--symlinks" || arg == "m" ) {
+         opt_print_time = true;
+      } else if( arg == "--symlinks" || arg == "-m" ) {
          opt_symlinks = true;
+      } else if( arg == "--time" || arg == "-t" ) {
+         opt_print_time = true;
       } else {
          std::cout << "Unknown arg: " << arg << "\n";
          std::exit( 1 );
