@@ -15,9 +15,9 @@ Worried about bogging-down compile times? That's what most people are worried ab
 
 I can't say for certain if this is a good tool if your codebase is millions of files, but as an example for a moderate sized project:
 
-    $ treehash Q:\work Q:\work\clang\* -t
-    A072BF23A57AD676
-    Time elapsed: 318ms
+    $ treehash -b Q:\work Q:\work\clang\* -t
+    DC5D0A2FE69284F6
+    Time elapsed: 331ms
 
 Hashing the ENTIRE clang folder takes about 318ms on my system (whereas compilation takes multiple hours). It might take some seconds longer on some passes if the filesystem needs to cache things, but that's a step that shouldn't have to be repeated during the compilation phase.
 
