@@ -3,6 +3,7 @@
 #include "options.h"
 #include "util.h"
 #include "hash.h"
+#include "default_scanner.h"
 
 #include <string>
 #include <iostream>
@@ -41,12 +42,14 @@ int Run( int argc, char **argv ) {
 
       std::cout << "Any files listed without a * were excluded by your filters.\n";
    }
+
+   DefaultScanner scanner;
    
    Hash hash = 0;
    for( auto &input : opt_inputs ) {
       if( opt_verbose )
          std::cout << "Processing input \"" << input << "\"\n";
-      hash ^= HashInput( input );
+      hash ^= HashInput( input, scanner );
       if( opt_verbose )
          std::cout << "Hash for \"" << input << "\": " << HashToHex(hash) << "\n";
    }

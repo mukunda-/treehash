@@ -22,11 +22,16 @@ configuration "Debug"
 configuration "Release"
    defines  {"NDEBUG"}
    optimize "On"
-   filter "action:vs*"
-      buildoptions { "/Ob2", "/GL" }
-      linkoptions  { "/LTCG:incremental" }
-   filter {}
 configuration {}
+
+filter {"action:vs*"}
+   defines "TARGET_WINDOWS"
+filter {}
+
+filter {"Release", "action:vs*"}
+   buildoptions { "/Ob2", "/GL" }
+   linkoptions  { "/LTCG:incremental" }
+filter {}
 
 project   "treehash"
 kind      "ConsoleApp"

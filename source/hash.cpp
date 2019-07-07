@@ -3,6 +3,7 @@
 #include "hash.h"
 #include "options.h"
 #include "util.h"
+#include "scanner.h"
 
 #include <fstream>
 #include <unordered_set>
@@ -14,8 +15,6 @@ namespace fs = std::filesystem;
 
 ///////////////////////////////////////////////////////////////////////////////
 namespace Treehash {
-
-constexpr Hash HASH_SEED = 0;
 
 struct {
    std::unordered_set<std::string> exts;
@@ -46,7 +45,7 @@ struct {
 
 
 //-----------------------------------------------------------------------------
-std::string HashToHex( Hash hash ) {
+std::string HashToHex( Hash hash ) noexcept {
    std::string output;
    output.reserve( 16 );
    const char digit_map[] = {
@@ -139,11 +138,11 @@ bool StripRecurseMark( std::string *path ) {
 std::regex re_inputfile_directive( R"(^\[([^]*)\])" );
 
 //-----------------------------------------------------------------------------
-Hash ProcessInputFile( std::string path ) {
+Hash ProcessInputFile( std::string path, Scanner &scanner ) {
    std::ifstream file( path );
    std::string line;
 
-   Hash hash = HASH_SEED;
+   Hash hash = 0;
 
    while( std::getline( file, line )) {
       InplaceTrim( &line );
@@ -172,7 +171,7 @@ Hash ProcessInputFile( std::string path ) {
          }
       } else {
          bool recursive = StripRecurseMark( &line );
-         hash ^= AddFolder( line, recursive );
+         hash ^= scanner.Scan( line, recursive );
       }
    }
 
@@ -180,15 +179,15 @@ Hash ProcessInputFile( std::string path ) {
 }
 
 //-----------------------------------------------------------------------------
-Hash HashInput( std::string input ) {
-   std::error_code ec;
-   fs::current_path( opt_basepath, ec );
-   if( ec ) {
-      std::cout << "Error with basepath.\n";
-      std::exit( 1 );
+Hash HashInput( std::string input, Scanner &scanner ) noexcept {
+   
+   std::error_code error_code;
+   std::filesystem::current_path( opt_basepath, error_code );
+   if( error_code ) {
+      std::cout << "Error with basepath.";
+      return 0;
    }
-
-   Filter.Reset();
+   
    InplaceTrim( &input );
    if( input.empty() ) return 0;
 
@@ -204,12 +203,12 @@ Hash HashInput( std::string input ) {
          if( opt_verbose )
             std::cout << "Input is an input file (or we think it is).\n";
          // Input file
-         return ProcessInputFile( input );
+         return ProcessInputFile( input, scanner );
       } else if( fs::is_directory( path )) {
          if( opt_verbose )
             std::cout << "Input is a directory. Scanning directly!\n";
          // Directory
-         return AddFolder( path, recurse );
+         return scanner.Scan( path.generic_string(), recurse );
       }
    } catch( fs::filesystem_error &e ) {
       std::cout << "Filesystem error: " << e.what()

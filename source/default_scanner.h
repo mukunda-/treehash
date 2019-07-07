@@ -1,8 +1,9 @@
 // treehash (C) 2019 Mukunda Johnson (mukunda@mukunda.com)
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
-#include "scanner.h"
+
 #include "hash.h"
+#include "scanner.h"
 #include "options.h"
 
 #include <filesystem>
@@ -13,6 +14,8 @@
 namespace Treehash {
 
 //-----------------------------------------------------------------------------
+// Default cross-platform scanner based on std::filesystem.
+//
 class DefaultScanner : public Scanner {
 //-----------------------------------------------------------------------------
    std::unordered_set<std::string_view> m_exts;
@@ -47,8 +50,7 @@ class DefaultScanner : public Scanner {
    }
 
    //--------------------------------------------------------------------------
-   Hash ScanRecursion( const std::filesystem::path &path ) noexcept {
-      Hash hash = 0;
+   Hash ScanRecursion( const std::filesystem::path &path, bool recursive ) noexcept {
       Hash hash = 0;
       namespace fs = std::filesystem;
 
@@ -58,13 +60,13 @@ class DefaultScanner : public Scanner {
                         | fs::directory_options::skip_permission_denied
                         , error_code );
 
-      if( error_code ) return;
+      if( error_code ) return 0;
       
       for( auto &file : iter ) {
-         if( file.is_directory() && m_recursive ) {
+         if( file.is_directory() && recursive ) {
             if( IsExcluded( file.path(), true )) continue;
-            return ScanRecursion( file );
-         } else {
+            hash ^= ScanRecursion( file, recursive );
+         } else if( file.is_regular_file() ) {
             auto path = file.path();
             if( IsExcluded( file.path(), false )) {
                if( opt_verbose ) {
@@ -87,14 +89,8 @@ class DefaultScanner : public Scanner {
    
 public:
    //--------------------------------------------------------------------------
-   Hash Scan( std::string_view path ) noexcept override {
-      std::error_code error_code;
-      std::filesystem::current_path( opt_basepath, error_code );
-      if( error_code ) {
-         std::cout << "Error with basepath.";
-         return 0;
-      }
-      return ScanRecursion( path );
+   Hash Scan( std::string_view path, bool recursive ) noexcept override {
+      return ScanRecursion( path, recursive );
    }
 
    //--------------------------------------------------------------------------
@@ -124,7 +120,7 @@ public:
    }
 
    //--------------------------------------------------------------------------
-   DefaultScanner(){
+   DefaultScanner() {
       ResetExts();
       ResetIgnores();
    }
