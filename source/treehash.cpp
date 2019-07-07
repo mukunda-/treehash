@@ -1,15 +1,14 @@
 // treehash (C) 2019 Mukunda Johnson (mukunda@mukunda.com)
 ///////////////////////////////////////////////////////////////////////////////
+#include "options.h"
+#include "util.h"
+#include "hash.h"
+
 #include <string>
 #include <iostream>
 #include <filesystem>
 #include <regex>
 #include <chrono>
-
-//-----------------------------------------------------------------------------
-#include "usage.cpp"
-#include "options.cpp"
-#include "hash.cpp"
 
 ///////////////////////////////////////////////////////////////////////////////
 namespace Treehash {
@@ -19,7 +18,7 @@ int Run( int argc, char **argv ) {
    auto start_time = std::chrono::steady_clock::now();
    ReadOptions( argc, argv );
    if( opt_verbose )
-      std::cout << "treehash v" << VERSION 
+      std::cout << "treehash v" << VERSION
                 << " (C) 2019 Mukunda Johnson (mukunda@mukunda.com)\n";
    
    if( opt_inputs.empty() ) {

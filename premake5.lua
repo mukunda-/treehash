@@ -22,10 +22,14 @@ configuration "Debug"
 configuration "Release"
    defines  {"NDEBUG"}
    optimize "On"
+   filter "action:vs*"
+      buildoptions { "/Ob2", "/GL" }
+      linkoptions  { "/LTCG:incremental" }
+   filter {}
 configuration {}
 
 project   "treehash"
 kind      "ConsoleApp"
 language  "C++"
 
-files { "source/treehash.cpp" }
+files { "source/*.cpp", "source/*.h" }

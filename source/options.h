@@ -20,4 +20,8 @@ inline std::vector<std::string> opt_inputs;
 inline std::vector<std::string> opt_exts;
 inline std::vector<std::string> opt_ignores;
 
+//-----------------------------------------------------------------------------
+// Static options:
+inline const std::string VERSION{ "0.9.0" };
+
 } /////////////////////////////////////////////////////////////////////////////

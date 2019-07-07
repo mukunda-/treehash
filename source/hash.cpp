@@ -1,10 +1,16 @@
 // treehash (C) 2019 Mukunda Johnson (mukunda@mukunda.com)
 ///////////////////////////////////////////////////////////////////////////////
 #include "hash.h"
+#include "options.h"
+#include "util.h"
+
 #include "hash/xxh3.h"
 
 #include <fstream>
 #include <unordered_set>
+#include <filesystem>
+#include <iostream>
+#include <regex>
 
 namespace fs = std::filesystem;
 

@@ -8,7 +8,7 @@
 namespace Treehash {
    
 //-----------------------------------------------------------------------------
-std::string trim( const std::string &s ) {
+inline std::string trim( const std::string &s ) {
    // Pushkoff @ stackoverflow
    std::string::const_iterator it = s.begin();
    while( it != s.end() && isspace(*it) ) it++;
@@ -20,7 +20,7 @@ std::string trim( const std::string &s ) {
 }
 
 //-----------------------------------------------------------------------------
-void InplaceTrim( std::string *s ) {
+inline void InplaceTrim( std::string *s ) {
    auto it = s->begin();
    while( it != s->end() && std::isspace(*it) ) it++;
    if( it != s->begin() ) s->erase( s->begin(), it );
@@ -31,7 +31,7 @@ void InplaceTrim( std::string *s ) {
 }
 
 //-----------------------------------------------------------------------------
-bool IsDelim( char c, char *delims ) {
+inline bool IsDelim( char c, char *delims ) {
    for( int i = 0; delims[i]; i++ ) {
       if( delims[i] == ' ' && std::isspace(c) ) return true;
       else if( delims[i] == c ) return true;
@@ -40,7 +40,7 @@ bool IsDelim( char c, char *delims ) {
 }
 
 //-----------------------------------------------------------------------------
-void SplitForeach( const std::string &string_to_parse,
+inline void SplitForeach( const std::string &string_to_parse,
                    char *null_terminated_delimiters,
                    std::function<void( std::string &piece )> func ) {
 
@@ -69,7 +69,7 @@ void SplitForeach( const std::string &string_to_parse,
 }
 
 template< typename L >
-std::string PluralS( L count ) {
+inline std::string PluralS( L count ) {
    return count == 1 ? "" : "s";
 }
 
