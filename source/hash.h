@@ -2,12 +2,16 @@
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
 
+#include "hash/xxh3.h"
+
 #include <cstdint>
 #include <string>
 
 ///////////////////////////////////////////////////////////////////////////////
 namespace Treehash {
    using Hash = uint64_t;
+   constexpr Hash HASH_SEED = 0;
+
    Hash HashInput( std::string input );
    std::string HashToHex( Hash hash );
 

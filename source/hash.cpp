@@ -4,8 +4,6 @@
 #include "options.h"
 #include "util.h"
 
-#include "hash/xxh3.h"
-
 #include <fstream>
 #include <unordered_set>
 #include <filesystem>
