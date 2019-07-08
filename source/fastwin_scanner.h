@@ -76,6 +76,11 @@ class FastwinScanner : public Scanner {
 
    }
 
+   inline wchar_t *MoveString( wchar_t *dest, const wchar_t *source ) {
+      while( *source ) *dest++ = *source++;
+      return dest;
+   }
+
    Hash ScanInner( wchar_t *path_start ) {
       path_start[0] = '*';
       path_start[1] = 0;
@@ -84,6 +89,8 @@ class FastwinScanner : public Scanner {
                          , &m_find_data, FindExSearchNameMatch
                          , NULL, 0 );
       if( handle == INVALID_HANDLE_VALUE ) return 0;
+
+      //std::vector<std::wstring> nests;
 
       Hash hash = 0;
       
@@ -97,17 +104,14 @@ class FastwinScanner : public Scanner {
          
          if( m_find_data.cFileName[0] == L'.' ) continue;
 
-         wchar_t *path_end = path_start;
-         wchar_t *copyname = m_find_data.cFileName;
-         while( *copyname ) {
-            *path_end++ = *copyname++;
-         } while( *copyname );
+         wchar_t *path_end = MoveString( path_start, m_find_data.cFileName );
          *path_end = 0;
          
          if( m_find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY
                                                              && m_recursive ) {
             if( IsExcluded( path_start, path_end, true )) continue;
-            //if( m_find_data.cFileName[0] == L'.' ) continue;
+            //nests.push_back( m_find_data.cFileName );
+            
             *path_end++ = '\\';
             // Don't need null terminator here as it's added in ScanInner.
             hash ^= ScanInner( path_end );
@@ -122,6 +126,12 @@ class FastwinScanner : public Scanner {
 
       // Unsafe?
       FindClose( handle );
+      /*
+      for( auto &n : nests ) {
+         wchar_t *path_end = MoveString( path_start, n.c_str() );
+         *path_end++ = '\\';
+         hash ^= ScanInner( path_end );
+      }*/
 
       return hash;
    }
