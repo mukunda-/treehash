@@ -1,3 +1,5 @@
+
+*(Please note that this is a work in progress and there are likely several bugs.)*
 # treehash
 Treehash is a tool to check for changes in a directory. Say for example in your build file you have:
 
