@@ -1,3 +1,5 @@
+
+*(Please note that this is a work in progress and there are likely several bugs.)*
 # treehash
 Treehash is a tool to check for changes in a directory. Say for example in your build file you have:
 
@@ -19,4 +21,4 @@ As an example for a moderate sized project:
     608888FEB9F4F3FA
     Time elapsed: 285ms
 
-Hashing my copy of the clang codebase takes about 285ms on my system, negligible to actual compilation times (multiple hours on my machine if building from scratch). The treehash might take some (several seconds) longer on some passes if the system needs to cache things about the files, but that's a step that needs to be taken for compilation anyway. 
+Hashing my copy of the Clang codebase takes about 285ms on my system, negligible to actual compilation times (multiple hours on my machine for fresh build). The treehash might take some (several seconds) longer on some passes if the system needs to cache things about the files, but that's a step that needs to be taken for compilation anyway.
