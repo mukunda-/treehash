@@ -16,7 +16,6 @@ namespace Treehash {
 
 //-----------------------------------------------------------------------------
 int Run( int argc, char **argv ) {
-   auto start_time = std::chrono::steady_clock::now();
    ReadOptions( argc, argv );
    if( opt_verbose )
       std::cout << "treehash v" << VERSION
@@ -44,6 +43,7 @@ int Run( int argc, char **argv ) {
 
    std::shared_ptr<Scanner> scanner = CreateScanner( "fastwin" );
    
+   auto start_time = std::chrono::steady_clock::now();
    Hash hash = 0;
    for( auto &input : opt_inputs ) {
       if( opt_verbose )
@@ -52,6 +52,7 @@ int Run( int argc, char **argv ) {
       if( opt_verbose )
          std::cout << "Hash for \"" << input << "\": " << HashToHex(hash) << "\n";
    }
+   auto end_time = std::chrono::steady_clock::now();
 
    if( opt_verbose ) std::cout << "Final result: ";
    // In non verbose mode, this should be the only output under normal
@@ -59,7 +60,6 @@ int Run( int argc, char **argv ) {
    std::cout << HashToHex( hash );
    if( opt_print_time ) std::cout << "\n";
 
-   auto end_time = std::chrono::steady_clock::now();
    if( opt_print_time ) {
       auto time = std::chrono::duration_cast<std::chrono::milliseconds>
                   ( end_time - start_time ).count();

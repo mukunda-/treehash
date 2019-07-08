@@ -28,8 +28,6 @@ class FastwinScanner : public Scanner {
    __m128i m_ext_masks[MAX_EXT_FILTERS];
    __m128i m_exts[MAX_EXT_FILTERS];
    int m_ext_count = 0;
-   //__declspec(align(32)) uint64_t m_exts_masks[MAX_EXT_FILTERS][3] = {0};
-   //__declspec(align(32)) uint64_t m_exts[MAX_EXT_FILTERS][3] = {0};
    wchar_t m_ignores[IGNORE_FIELDSIZE][MAX_IGNORE_FILTERS] = {0};
    int m_ignore_count = 0;
    WIN32_FIND_DATAW m_find_data;
@@ -85,6 +83,7 @@ class FastwinScanner : public Scanner {
       path_start[0] = '*';
       path_start[1] = 0;
 
+      // could add option for larger fetch buffer
       HANDLE handle = FindFirstFileEx( m_current_path, FindExInfoBasic
                          , &m_find_data, FindExSearchNameMatch
                          , NULL, 0 );
