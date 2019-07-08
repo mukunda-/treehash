@@ -79,28 +79,19 @@ class FastwinScanner : public Scanner {
       return dest;
    }
 
-   Hash ScanInner( wchar_t *path_start ) {
+   Hash ScanInner( wchar_t *path_start ) noexcept {
       path_start[0] = '*';
       path_start[1] = 0;
 
       // could add option for larger fetch buffer
       HANDLE handle = FindFirstFileEx( m_current_path, FindExInfoBasic
                          , &m_find_data, FindExSearchNameMatch
-                         , NULL, 0 );
+                         , NULL, 0 ));
       if( handle == INVALID_HANDLE_VALUE ) return 0;
-
-      //std::vector<std::wstring> nests;
 
       Hash hash = 0;
       
-      do {/*
-         int length = 0;
-         for( ; m_find_data.cFileName[length]; ) length++;
-         wchar_t *path_end = path_start + length;
-
-         // length+1 to copy null terminator as well.
-         memcpy( path_start, m_find_data.cFileName, (length+1) * sizeof(wchar_t) );*/
-         
+      do {
          if( m_find_data.cFileName[0] == L'.' ) continue;
 
          wchar_t *path_end = MoveString( path_start, m_find_data.cFileName );
@@ -109,7 +100,6 @@ class FastwinScanner : public Scanner {
          if( m_find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY
                                                              && m_recursive ) {
             if( IsExcluded( path_start, path_end, true )) continue;
-            //nests.push_back( m_find_data.cFileName );
             
             *path_end++ = '\\';
             // Don't need null terminator here as it's added in ScanInner.
@@ -123,14 +113,7 @@ class FastwinScanner : public Scanner {
          }
       } while( FindNextFile( handle, &m_find_data ));
 
-      // Unsafe?
       FindClose( handle );
-      /*
-      for( auto &n : nests ) {
-         wchar_t *path_end = MoveString( path_start, n.c_str() );
-         *path_end++ = '\\';
-         hash ^= ScanInner( path_end );
-      }*/
 
       return hash;
    }
@@ -235,8 +218,6 @@ public:
    void ResetIgnores() noexcept override {
       m_ignore_count = static_cast<int>(opt_ignores.size());
    }
-
 };
-
 
 } /////////////////////////////////////////////////////////////////////////////
