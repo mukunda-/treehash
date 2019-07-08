@@ -24,8 +24,10 @@ configuration "Release"
    optimize "On"
 configuration {}
 
+defines { "_ENABLE_EXTENDED_ALIGNED_STORAGE" }
+
 filter {"action:vs*"}
-   defines "TARGET_WINDOWS"
+   defines{ "TARGET_WINDOWS" }
 filter {}
 
 filter {"Release", "action:vs*"}
