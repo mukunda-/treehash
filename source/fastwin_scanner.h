@@ -17,6 +17,7 @@ namespace Treehash {
 
 //-----------------------------------------------------------------------------
 // A fast Windows directory scanner.
+// Here be dragons.
 class FastwinScanner : public Scanner {
    
    static constexpr int MAX_EXT_FILTERS    = 64;
@@ -41,13 +42,14 @@ class FastwinScanner : public Scanner {
    
    inline bool IsExcluded( const wchar_t *path_short, const wchar_t *path_end,
                                                  bool is_directory ) noexcept {
-      if( path_short[0] == L'.' ) return true;
+      //if( path_short[0] == L'.' ) return true;
 
       // Extensions
       if( !is_directory && m_ext_count > 0 ) {
          __m128i ext = _mm_loadu_si128(
                           reinterpret_cast<const __m128i*>( path_end - 16 ));
          
+         // Here be dragons.
          for( int i = 0; i < m_ext_count; i++ ) {
             __m128i masked =_mm_and_si128( ext, m_ext_masks[i] );
             __m128i neq = _mm_xor_si128( masked, m_exts[i] );
@@ -60,6 +62,16 @@ class FastwinScanner : public Scanner {
 
    found_matched_extension:
       // Ignores
+
+      for( int i = 0; i < m_ignore_count; i++ ) {
+         wchar_t *ignorestring = m_ignores[i];
+         if( lstrcmpW( path_short, ignorestring ) == 0 ) {
+            return true;
+         }
+         if( lstrcmpW( m_current_path, ignorestring ) == 0 ) {
+            return true;
+         }
+      }
       return false;
 
    }
@@ -70,24 +82,32 @@ class FastwinScanner : public Scanner {
 
       HANDLE handle = FindFirstFileEx( m_current_path, FindExInfoBasic
                          , &m_find_data, FindExSearchNameMatch
-                         , NULL, FIND_FIRST_EX_LARGE_FETCH );
+                         , NULL, 0 );
       if( handle == INVALID_HANDLE_VALUE ) return 0;
 
       Hash hash = 0;
       
-      do {
+      do {/*
          int length = 0;
          for( ; m_find_data.cFileName[length]; ) length++;
          wchar_t *path_end = path_start + length;
 
          // length+1 to copy null terminator as well.
-         memcpy( path_start, m_find_data.cFileName, (length+1) * sizeof(wchar_t) );
+         memcpy( path_start, m_find_data.cFileName, (length+1) * sizeof(wchar_t) );*/
          
+         if( m_find_data.cFileName[0] == L'.' ) continue;
+
+         wchar_t *path_end = path_start;
+         wchar_t *copyname = m_find_data.cFileName;
+         while( *copyname ) {
+            *path_end++ = *copyname++;
+         } while( *copyname );
+         *path_end = 0;
          
          if( m_find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY
                                                              && m_recursive ) {
             if( IsExcluded( path_start, path_end, true )) continue;
-            if( m_find_data.cFileName[0] == L'.' ) continue;
+            //if( m_find_data.cFileName[0] == L'.' ) continue;
             *path_end++ = '\\';
             // Don't need null terminator here as it's added in ScanInner.
             hash ^= ScanInner( path_end );
@@ -126,7 +146,8 @@ public:
          }
          return;
       }
-
+      
+      // Here be dragons...
       __m128i mask = _mm_set1_epi8( (char)0xFF );
       __m128i mext = _mm_loadu_si128( reinterpret_cast<const __m128i*>( work ));
       for( int i = 0; i < (int)ext.size(); i++ ) {
@@ -160,6 +181,9 @@ public:
          return;
       }
       m_ignores[m_ignore_count][length] = 0;
+      for( wchar_t *scan = m_ignores[m_ignore_count]; *scan; scan++ ) {
+         if( *scan == L'/' ) *scan = L'\\';
+      }
       m_ignore_count++;
    }
 
@@ -201,11 +225,6 @@ public:
    //--------------------------------------------------------------------------
    void ResetIgnores() noexcept override {
       m_ignore_count = static_cast<int>(opt_ignores.size());
-      /*
-      m_ignores.clear();
-
-      for( auto &i : opt_ignores )
-         m_ignores.insert( i );*/
    }
 
 };
