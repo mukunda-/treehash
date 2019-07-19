@@ -21,4 +21,4 @@ As an example for a moderate sized project:
     608888FEB9F4F3FA
     Time elapsed: 285ms
 
-Hashing my copy of the Clang codebase takes about 285ms on my system (99% of that time is the system calls; 1% is the hasher), negligible to actual compilation times (multiple hours on my machine for fresh build). The treehash might take some several seconds longer on some passes if the system needs to cache things about the files, but that doesn't matter because it's a step that needs to be done anyway for compilation.
+Hashing my copy of the Clang codebase takes about 285ms on my system, negligible compared to actual compilation times (multiple hours on my machine for fresh build). 99% of that time is the system calls; 1% is the hasher. The treehash might take some several seconds longer on some passes if the system needs to cache things about the files, but that doesn't matter because it's a step that needs to be done anyway for compilation.
